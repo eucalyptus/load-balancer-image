@@ -15,7 +15,6 @@ Source1:        IMAGE-LICENSE
 Source2:        build-eustore-tarball.sh
 # Kickstart used to build the image
 Source3:        %{name}.ks
-NoSource: 0
 
 %description
 This package contains a machine image for use in Eucalyptus as a load
