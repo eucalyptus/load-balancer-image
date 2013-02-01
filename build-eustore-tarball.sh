@@ -18,8 +18,10 @@ if [ ! -d ./ami-creator ]; then
 	git clone git://github.com/katzj/ami-creator.git
 fi
 
+mkdir -p ./tmp
+
 ./ami-creator/ami_creator/ami_creator.py \
-	-c $KSFILE \
+	-c $KSFILE -t ./tmp \
 	-n euca-lb -v -e || exit 1
 
 rm -rf $PKGNAME
