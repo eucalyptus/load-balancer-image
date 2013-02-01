@@ -26,7 +26,7 @@ part / --size 524 --fstype ext3
 # Repositories
 repo --name=CentOS6-Base --baseurl=http://mirror.qa.eucalyptus-systems.com/centos/6.3/os/$basearch/
 repo --name=CentOS6-Updates --baseurl=http://mirror.qa.eucalyptus-systems.com/centos/6.3/updates/$basearch/
-repo --name=EPEL --baseurl=http://download.fedoraproject.org/pub/epel/6/$basearch/
+repo --name=EPEL --baseurl=http://mirror.qa.eucalyptus-systems.com/epel/6/$basearch/
 
 # Needed for HAProxy development builds
 repo --name=HAProxy --baseurl=http://packages.release.eucalyptus-systems.com/yum/tags/balancer-master-build-bootstrap/centos/6/$basearch/
