@@ -29,7 +29,7 @@ repo --name=CentOS6-Updates --baseurl=http://mirror.qa.eucalyptus-systems.com/ce
 repo --name=EPEL --baseurl=http://mirror.qa.eucalyptus-systems.com/epel/6/$basearch/
 
 # Needed for HAProxy development builds and servo package
-repo --name=LoadBalancerServo --mirrolist=http://packages.release.eucalyptus-systems.com/api/1/genrepo/?distro=centos&releasever=6&arch=x86_64&ref=master&url=git://github.com/eucalyptus/load-balancer-servo.git
+repo --name=LoadBalancerServo --mirrorlist=http://packages.release.eucalyptus-systems.com/api/1/genrepo/?distro=centos&releasever=6&arch=x86_64&ref=master&url=git://github.com/eucalyptus/load-balancer-servo.git
 
 #
 #
