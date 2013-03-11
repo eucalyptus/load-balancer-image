@@ -14,7 +14,7 @@ selinux --permissive
 firewall --disabled
 bootloader --timeout=1  --append xen_blkfront.sda_is_xvda=1
 network --bootproto=dhcp --device=eth0 --onboot=on
-services --enabled=network,load-balancer-servo
+services --enabled=network
 
 #
 # Provide a default password for developer access
