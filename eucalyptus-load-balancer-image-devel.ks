@@ -170,6 +170,6 @@ cd /mnt/load-balancer-servo
 ./install-servo.sh
 service load-balancer-servo start
 EOF
-chmod 755 /var/lib/cloud/scripts/per-boot/bootstrap-jenkins.sh
+chmod 755 /var/lib/cloud/scripts/per-boot/bootstrap-servo.sh
 %end
 
