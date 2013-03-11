@@ -1,6 +1,6 @@
 Name:           eucalyptus-load-balancer-image
-Version:        0.1
-Release:        0%{?build_id:.%build_id}%{?dist}
+Version:        1.0.0
+Release:        0%{?build_id:.%build_id}%{?devbuild:.dev}%{?dist}
 Summary:        Eucalyptus Elastic Load Balancer Machine Image
 
 Group:          Applications/System
