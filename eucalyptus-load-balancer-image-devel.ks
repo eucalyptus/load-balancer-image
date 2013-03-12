@@ -14,7 +14,7 @@ selinux --permissive
 firewall --disabled
 bootloader --timeout=1  --append xen_blkfront.sda_is_xvda=1
 network --bootproto=dhcp --device=eth0 --onboot=on
-services --enabled=network
+services --enabled=network,ntpd,ntpdate
 
 #
 # Provide a default password for developer access
@@ -51,6 +51,8 @@ curl
 e2fsprogs
 grub
 kernel-xen
+ntp
+ntpdate
 openssh-clients
 openssh-server
 passwd
@@ -161,6 +163,13 @@ cloud_final_modules:
 
 # vim:syntax=yaml
 EOF
+%end
+
+#
+# Fix sudo settings so that servo is able to start haproxy without a tty
+%post --erroronfail
+sed -i '/requiretty/s/^/#/' /etc/sudoers
+sed -i '/!visiblepw/s/^/#/' /etc/sudoers
 %end
 
 #
