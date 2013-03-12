@@ -65,13 +65,17 @@ system-config-securitylevel-tui
 # servo packages
 haproxy
 python-httplib2
-python-boto
+
+#
+# For now we're pulling this from pypi
+#python-boto
 
 #
 # development tools
 git
 ipython
 pylint
+vim-enhanced
 
 #
 # Package exclusions
@@ -165,8 +169,15 @@ EOF
 mkdir -p /var/lib/cloud/scripts/per-boot
 cat > /var/lib/cloud/scripts/per-boot/bootstrap-servo.sh << EOF
 #!/bin/bash
+
+# Install latest boto library
+easy_install https://pypi.python.org/packages/source/b/boto/boto-2.8.0.tar.gz
+
+# Grab latest servo code
 git clone git://github.com/eucalyptus/load-balancer-servo.git /mnt/load-balancer-servo
 cd /mnt/load-balancer-servo
+
+# Install and run
 ./install-servo.sh
 service load-balancer-servo start
 EOF
