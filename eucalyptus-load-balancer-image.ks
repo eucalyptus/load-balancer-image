@@ -1,25 +1,36 @@
-# Build a basic CentOS 6 AMI
+# Copyright 2009-2013 Eucalyptus Systems, Inc.
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; version 3 of the License.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see http://www.gnu.org/licenses/.
+#
+# Please contact Eucalyptus Systems, Inc., 6755 Hollister Ave., Goleta
+# CA 93117, USA or visit http://www.eucalyptus.com/licenses/ if you need
+# additional information or have any questions.
+
+#
+# Eucalyptus Loadbalancer Release Image
+# 
+# This image is meant to be distributed along with Eucalyptus
+#
 lang en_US.UTF-8
 keyboard us
 skipx
 timezone UTC
 auth --useshadow --enablemd5
 selinux --permissive
-firewall --enabled --ssh
+firewall --disabled
 bootloader --timeout=1  --append xen_blkfront.sda_is_xvda=1
 network --bootproto=dhcp --device=eth0 --onboot=on
-services --enabled=network,load-balancer-servo
-
-
-# Uncomment the next line
-# to make the root password be password
-# By default the root password is emptied
-#rootpw foobar
-
-#
-# Define how large you want your rootfs to be
-# NOTE: S3-backed AMIs have a limit of 10G
-#
+services --enabled=network,ntpd,ntpdate,load-balancer-servo
 part / --size 524 --fstype ext3
 
 #
@@ -28,6 +39,7 @@ repo --name=CentOS6-Base --baseurl=http://mirror.qa.eucalyptus-systems.com/cento
 repo --name=CentOS6-Updates --baseurl=http://mirror.qa.eucalyptus-systems.com/centos/6.3/updates/$basearch/
 repo --name=EPEL --baseurl=http://mirror.qa.eucalyptus-systems.com/epel/6/$basearch/
 
+#
 # Needed for HAProxy development builds and servo package
 repo --name=LoadBalancerServo --mirrorlist=http://packages.release.eucalyptus-systems.com/api/1/genrepo/?distro=centos&releasever=6&arch=x86_64&ref=master&url=git://github.com/eucalyptus/load-balancer-servo.git
 
@@ -56,11 +68,15 @@ rootfiles
 sudo
 system-config-firewall-base
 system-config-securitylevel-tui
+ntp
+ntpdate
 
 #
 # Loadbalancer packages
 haproxy
 load-balancer-servo
+python-boto
+python-httplib2
 
 #
 # Package exclusions
@@ -98,17 +114,10 @@ load-balancer-servo
 
 %end
 
-# set up ec2-user
+#
+# Fix sudo settings so that servo is able to start haproxy without a tty
 %post --erroronfail
-/usr/sbin/useradd ec2-user
-echo 'ec2-user ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers
-
-%end
-
-
-#
-# Add custom post scripts after the base post.
-#
-%post
+sed -i '/requiretty/s/^/#/' /etc/sudoers
+sed -i '/!visiblepw/s/^/#/' /etc/sudoers
 %end
 
