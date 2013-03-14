@@ -24,13 +24,21 @@ if [ `id -u` -ne 0 ]; then
 fi
 
 KSFILE=$1
+MIRRORTYPE=$2
 
 if [ -z $KSFILE ]; then
     echo "-=[ERR]=- must to provide a kickstart file" >&2
     exit 1
 fi
 
-PKGNAME=$(basename $KSFILE .ks)
+[ -z $MIRRORTYPE ] && MIRRORTYPE=public
+
+KSGENFILE=${KSFILE%.in}
+PKGNAME=${KSGENFILE%.ks}
+
+#
+# Inject mirrors into the kickstart template
+scripts/ksgen.py -m $MIRRORTYPE -c mirrors.cfg $KSFILE > $KSGENFILE
 
 if [ ! -d ./ami-creator ]; then
 	git clone git://github.com/katzj/ami-creator.git
@@ -39,7 +47,7 @@ fi
 mkdir -p ./tmp
 
 ./ami-creator/ami_creator/ami_creator.py \
-	-c $KSFILE -t ./tmp \
+	-c $KSGENFILE -t ./tmp \
 	-n euca-lb -v -e || exit 1
 
 rm -rf $PKGNAME
