@@ -23,6 +23,8 @@ if [ `id -u` -ne 0 ]; then
     exit 1
 fi
 
+. scripts/buildenv.sh
+
 KSFILE=$1
 MIRRORTYPE=$2
 
@@ -48,7 +50,7 @@ mkdir -p ./tmp
 
 ./ami-creator/ami_creator/ami_creator.py \
 	-c $KSGENFILE -t ./tmp \
-	-n euca-lb -v -e || exit 1
+	-n $PKGNAME-$BUILD_VERSION-$BUILD_ID -v -e || exit 1
 
 rm -rf $PKGNAME
 mkdir -p $PKGNAME

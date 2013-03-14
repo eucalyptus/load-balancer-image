@@ -49,7 +49,7 @@ class MirrorConfig(Config):
             try:
                 return (repo_name, 'mirrorlist', self.get(repo, 'mirrorlist'))
             except NoOptionError:
-                sys.stderr.write("[-W-] no valid url for repo '{}'\n".format(repo_name))
+                sys.stderr.write("-=[WARN]=- no valid url for repo '{}'\n".format(repo_name))
                 return None
                 
 
@@ -71,7 +71,7 @@ if __name__ == "__main__":
     repos = mirror_config.get_repos(opts.mirror_type)
 
     if not repos:
-        sys.stderr.write("[-E-] no repositories found\n")
+        sys.stderr.write("-=[ERR]=- no repositories found\n")
         sys.exit(1)
 
     with open(ks_template) as ks_file:

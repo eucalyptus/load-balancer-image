@@ -18,36 +18,15 @@
 # CA 93117, USA or visit http://www.eucalyptus.com/licenses/ if you need
 # additional information or have any questions.
 
-function insert_global()
-{
-    local spec=$1
-    local var=$2
-    local value=$3
+BUILD_NUMBER=${BUILD_NUMBER:-0}
 
-    sed -i "1s/^/# This is a generated value\n%global $var $value\n\n/" $spec
-}
+if [ -z "$GIT_COMMIT" ]; then
+    GIT_COMMIT_SHORT=`git rev-parse --short HEAD`
+else
+    GIT_COMMIT_SHORT=${GIT_COMMIT:0:7}
+fi
 
-. scripts/buildenv.sh
+BUILD_ID=$BUILD_NUMBER.$(date +%y%m%d)git${GIT_COMMIT_SHORT}
 
-[ -d ./build ] && rm -rf build
-
-mkdir -p build/{BUILD,BUILDROOT,SRPMS,RPMS,SOURCES,SPECS}
-
-cp *.spec build/SPECS
-cp *.tgz *.ks scripts/build-eustore-tarball.sh IMAGE-LICENSE build/SOURCES
-
-SPECFILE=$(echo -n build/SPECS/*.spec)
-
-insert_global $SPECFILE dist .el6
-insert_global $SPECFILE build_id $BUILD_ID
-
-#
-# Setting the devbuild macro will append '-devel' to the package name
-[ "$1" = "devel" ] && insert_global $SPECFILE devbuild 1
-
-rpmbuild --define "_topdir `pwd`/build" \
-    -ba build/SPECS/eucalyptus-load-balancer-image.spec
-
-mkdir -p results
-find build/ -name "*.rpm" -exec mv {} results/ \;
+BUILD_VERSION=$(cat VERSION)
 
