@@ -38,7 +38,6 @@ fi
 BUILD_ID=$BUILD_NUMBER.$(date +%y%m%d)git${GIT_COMMIT_SHORT}
 
 [ -d ./build ] && rm -rf build
-[ -d ./results ] && rm -rf results
 
 mkdir -p build/{BUILD,BUILDROOT,SRPMS,RPMS,SOURCES,SPECS}
 
@@ -57,6 +56,6 @@ insert_global $SPECFILE build_id $BUILD_ID
 rpmbuild --define "_topdir `pwd`/build" \
     -ba build/SPECS/eucalyptus-load-balancer-image.spec
 
-mkdir results
+mkdir -p results
 find build/ -name "*.rpm" -exec mv {} results/ \;
 
