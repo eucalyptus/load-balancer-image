@@ -1,6 +1,6 @@
-Name:           eucalyptus-load-balancer-image
+Name:           eucalyptus-load-balancer-image%{?devbuild:-devel}
 Version:        1.0.0
-Release:        0%{?build_id:.%build_id}%{?devbuild:.dev}%{?dist}
+Release:        0%{?build_id:.%build_id}%{?dist}
 Summary:        Eucalyptus Elastic Load Balancer Machine Image
 
 Group:          Applications/System
@@ -23,7 +23,6 @@ balancer virtual machine.
 
 %prep
 cp -p %{SOURCE1} IMAGE-LICENSE
-
 
 %build
 # No build required 

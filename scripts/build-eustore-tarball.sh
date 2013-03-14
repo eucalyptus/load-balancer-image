@@ -18,23 +18,32 @@
 # CA 93117, USA or visit http://www.eucalyptus.com/licenses/ if you need
 # additional information or have any questions.
 
-set -x
-
-[ -d ./build ] && rm -rf build
-
-mkdir -p build/{BUILD,BUILDROOT,SRPMS,RPMS,SOURCES,SPECS}
-mkdir results
-rpm -ivh --define "_topdir `pwd`/build" *.src.rpm
-
-if [ "$1" = "devel" ]; then
-    rpmbuild --define "_topdir `pwd`/build" \
-        --define "dist .el6" --define "devbuild 1" \
-        -ba build/SPECS/*.spec
-else
-    rpmbuild --define "_topdir `pwd`/build" \
-        --define "dist .el6" \
-        -ba build/SPECS/*.spec
+if [ `id -u` -ne 0 ]; then
+    echo "-=[ERR]=- must run as root" >&2
+    exit 1
 fi
 
-find build/ -name "*.rpm" -exec mv {} results/ \;
+KSFILE=$1
+
+if [ -z $KSFILE ]; then
+    echo "-=[ERR]=- must to provide a kickstart file" >&2
+    exit 1
+fi
+
+PKGNAME=$(basename $KSFILE .ks)
+
+if [ ! -d ./ami-creator ]; then
+	git clone git://github.com/katzj/ami-creator.git
+fi
+
+mkdir -p ./tmp
+
+./ami-creator/ami_creator/ami_creator.py \
+	-c $KSFILE -t ./tmp \
+	-n euca-lb -v -e || exit 1
+
+rm -rf $PKGNAME
+mkdir -p $PKGNAME
+mv *.img vmlinuz* $PKGNAME/
+tar -czvf $PKGNAME.tgz $PKGNAME
 

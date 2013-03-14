@@ -34,14 +34,10 @@ services --enabled=network,ntpd,ntpdate,load-balancer-servo
 part / --size 524 --fstype ext3
 
 #
-# Repositories
-repo --name=CentOS6-Base --baseurl=http://mirror.qa.eucalyptus-systems.com/centos/6.3/os/$basearch/
-repo --name=CentOS6-Updates --baseurl=http://mirror.qa.eucalyptus-systems.com/centos/6.3/updates/$basearch/
-repo --name=EPEL --baseurl=http://mirror.qa.eucalyptus-systems.com/epel/6/$basearch/
-
-#
-# Needed for HAProxy development builds and servo package
-repo --name=LoadBalancerServo --mirrorlist=http://packages.release.eucalyptus-systems.com/api/1/genrepo/?distro=centos&releasever=6&arch=x86_64&ref=master&url=git://github.com/eucalyptus/load-balancer-servo.git
+# Templated Repository Entries 
+{% for (name, urltype, url) in repos %}
+repo --name={{ name }} --{{ urltype }}={{ url }}
+{% endfor %}
 
 #
 #

@@ -18,35 +18,21 @@
 # CA 93117, USA or visit http://www.eucalyptus.com/licenses/ if you need
 # additional information or have any questions.
 
-if [ `id -u` -ne 0 ]; then
-    echo "must run as root"
-    exit 1
+[ -d ./build ] && rm -rf build
+[ -d ./results ] && rm -rf results
+
+mkdir -p build/{BUILD,BUILDROOT,SRPMS,RPMS,SOURCES,SPECS}
+rpm -ivh --define "_topdir `pwd`/build" *.src.rpm
+
+if [ "$1" = "devel" ]; then
+    rpmbuild --define "_topdir `pwd`/build" \
+        --define "dist .el6" --define "devbuild 1" \
+        -ba build/SPECS/*.spec
+else
+    rpmbuild --define "_topdir `pwd`/build" \
+        --define "dist .el6" \
+        -ba build/SPECS/*.spec
 fi
 
-KSFILE=$1
-
-if [ -z $KSFILE ]; then
-    echo "need to provide a kickstart file"
-    exit 1
-fi
-
-PKGNAME=eucalyptus-load-balancer-image
-
-if [ ! -d ./ami-creator ]; then
-	git clone git://github.com/katzj/ami-creator.git
-fi
-
-mkdir -p ./tmp
-
-./ami-creator/ami_creator/ami_creator.py \
-	-c $KSFILE -t ./tmp \
-	-n euca-lb -v -e || exit 1
-
-rm -rf $PKGNAME
-
-mkdir -p $PKGNAME
-
-mv *.img vmlinuz* init* $PKGNAME/
-
-tar -czvf $PKGNAME.tgz $PKGNAME
+find build/ -name "*.rpm" -exec mv {} results/ \;
 
