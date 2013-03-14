@@ -18,6 +18,15 @@
 # CA 93117, USA or visit http://www.eucalyptus.com/licenses/ if you need
 # additional information or have any questions.
 
+function insert_global()
+{
+    local spec=$1
+    local var=$2
+    local value=$3
+
+    sed -i "1s/^/# This is a generated value\n%global $var $value\n\n/" $spec
+}
+
 [ -d ./build ] && rm -rf build
 
 rm -f *.src.rpm
@@ -25,11 +34,12 @@ rm -f *.src.rpm
 mkdir -p build/{BUILD,BUILDROOT,SRPMS,RPMS,SOURCES,SPECS}
 
 cp *.spec build/SPECS
-cp *.tgz *.ks build-eustore-tarball.sh IMAGE-LICENSE build/SOURCES
+cp *.tgz *.ks scripts/build-eustore-tarball.sh IMAGE-LICENSE build/SOURCES
 
 if [ "$1" = "devel" ]; then
+    insert_global build/SPECS/*.spec dist .el6
+    insert_global build/SPECS/*.spec devbuild 1
     rpmbuild --define "_topdir `pwd`/build" \
-        --define "dist .el6" --define "devbuild 1" \
         -bs build/SPECS/eucalyptus-load-balancer-image.spec
 else
     rpmbuild --define "_topdir `pwd`/build" \
