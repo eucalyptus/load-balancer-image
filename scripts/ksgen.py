@@ -36,7 +36,9 @@ class MirrorConfig(Config):
         for repo in self.sections():
             try:
                 if repo.split(':')[1] == mirror_type:
-                    repos.append(self._get_repo_entry(repo)) or next
+                    repo_entry = self._get_repo_entry(repo)
+                    if repo_entry:
+                        repos.append(repo_entry)
             except:
                 pass
         return repos
