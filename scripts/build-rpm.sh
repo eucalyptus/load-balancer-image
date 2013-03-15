@@ -46,7 +46,7 @@ insert_global $SPECFILE build_id $BUILD_ID
 [ "$1" = "devel" ] && insert_global $SPECFILE devbuild 1
 
 rpmbuild --define "_topdir `pwd`/build" \
-    -ba build/SPECS/eucalyptus-load-balancer-image.spec
+    -ba build/SPECS/eucalyptus-load-balancer-image.spec || exit 1
 
 mkdir -p results
 find build/ -name "*.rpm" -exec mv {} results/ \;
