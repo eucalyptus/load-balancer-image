@@ -191,14 +191,14 @@ cat > /var/lib/cloud/scripts/per-boot/bootstrap-servo.sh << EOF
 
 BOTO_VERSION=\$(rpm -q --queryformat="%{version}" python-boto)
 
-if [ $? -ne 0 ] || [ "\$BOTO_VERSION" != "2.8.0" ]; then
+if [ \$? -ne 0 ] || [ "\$BOTO_VERSION" != "2.8.0" ]; then
     # Install correct boto library since we don't have it
     easy_install https://pypi.python.org/packages/source/b/boto/boto-2.8.0.tar.gz
 fi
 
 # Grab latest servo code
-git clone git://github.com/eucalyptus/load-balancer-servo.git /mnt/load-balancer-servo
-cd /mnt/load-balancer-servo
+git clone git://github.com/eucalyptus/load-balancer-servo.git /opt/load-balancer-servo
+cd /opt/load-balancer-servo
 
 # Install and run
 ./install-servo.sh
