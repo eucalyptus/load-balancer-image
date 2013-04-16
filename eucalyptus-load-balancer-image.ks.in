@@ -117,3 +117,9 @@ sed -i '/requiretty/s/^/#/' /etc/sudoers
 sed -i '/!visiblepw/s/^/#/' /etc/sudoers
 %end
 
+#
+# Disable zeroconf
+%post --erroronfail
+echo "NOZEROCONF=yes" >> /etc/sysconfig/network
+%end
+

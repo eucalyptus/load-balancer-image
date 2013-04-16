@@ -183,6 +183,12 @@ sed -i '/!visiblepw/s/^/#/' /etc/sudoers
 %end
 
 #
+# Disable zeroconf
+%post --erroronfail
+echo "NOZEROCONF=yes" >> /etc/sysconfig/network
+%end
+
+#
 # Add cloud-init script that will bootstrap the load-balancer-servo package for us
 %post --erroronfail
 mkdir -p /var/lib/cloud/scripts/per-boot
