@@ -13,8 +13,8 @@ Installing from an RPM package
 The easiest way to get load balancer support into your Eucalyptus 3.3
 installation is to install the RPM package. The latest milestone release can be
 obtained from the repository
-[here](http://downloads.eucalyptus.com/software/eucalyptus/nightly/3.3-m4/centos/6/x86_64/).
-Of course, you'll first need to have the Eucalyptus 3.3 milestone 4 release
+[here](http://downloads.eucalyptus.com/software/eucalyptus/nightly/3.3-m6/centos/6/x86_64/).
+Of course, you'll first need to have the Eucalyptus 3.3 milestone 6 release
 installed on your system. Once that is complete, you can install load balancer
 support from the same package repository. Run the following command on the box
 hosting your Cloud Controller:
