@@ -57,6 +57,20 @@ You'll notice that in the repository there are two separate kickstart templates:
 * eucalyptus-load-balancer-image-devel.ks.in - This kickstart builds an image that
   is useful for development (e.g., you can SSH into this one and muck around)
 
+### Prerequisites to building an image
+
+PLEASE NOTE: It's highly recommended you build the EMI using Centos 6.4! These
+instructions assume that you're doing just that.
+
+You're first going to need to install the EPEL 6 repository release package:
+
+    $ yum install http://dl.fedoraproject.org/pub/epel/6/x86_64/epel-release-6-8.noarch.rpm
+
+In order to use the scripts to build an EMI image and the RPM package that
+contains it, you'll have to install a few prerequisites:
+
+    $ yum install git rpmdevtools python-jinja2 python-imgcreate
+
 ### Building an image
 
 To build a tarball that is compatible with eustore, do the following:
