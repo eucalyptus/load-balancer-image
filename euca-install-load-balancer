@@ -298,7 +298,7 @@ if __name__ == "__main__":
     group.add_argument('--remove-old', action='store_true',
                        help='''Remove OLD Load Balancers. Your most
                        recently installed Load Balancer and your
-                       currently installed Load Balancer will not be
+                       currently enabled Load Balancer will not be
                        removed. Most of the time, these will be the
                        same Load Balancer.''')
     group.add_argument('--remove-all', action='store_true',
