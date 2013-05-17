@@ -1,49 +1,56 @@
-load-balancer-image
+Load Balancer Image
 ===================
 
 What is this?
 -------------
 
-This repository contains kickstart templates and scripts used to build the
-Eucalyptus Load Balancer EMI.
+This repository contains kickstart templates and scripts used to build
+the Eucalyptus Load Balancer EMI.
 
 Installing from an RPM package
 ------------------------------
 
-The easiest way to get load balancer support into your Eucalyptus 3.3
-installation is to install the RPM package. The latest milestone release can be
-obtained from the repository
-[here](http://downloads.eucalyptus.com/software/eucalyptus/nightly/3.3-m6/centos/6/x86_64/).
-Of course, you'll first need to have the Eucalyptus 3.3 milestone 6 release
-installed on your system. Once that is complete, you can install load balancer
-support from the same package repository. Run the following command on the box
-hosting your Cloud Controller:
+### Prerequisites
+
+* Euca2ools 3.0.0 or newer, available [here](http://repos.fedorapeople.org/repos/gholms/cloud/)
+
+### RPM Install
+
+The easiest way to get Load Balancer support into your Eucalyptus 3.3
+installation is to install the RPM package. The latest milestone
+release can be obtained from the repository
+[here](http://downloads.eucalyptus.com/software/eucalyptus/nightly/3.3/centos/6/x86_64/).
+Of course, you'll first need to have the Eucalyptus 3.3 nightly
+release installed on your system. Once that is complete, you can
+install load balancer support from the same package repository. Run
+the following command on the box hosting your Cloud Controller:
 
     $ yum install eucalyptus-load-balancer-image-devel
 
-By running that command you'll install the development version of the load
-balancer image. To install the release version of the image, you can run the
-following instead:
+By running that command you'll install the development version of the
+load balancer image. To install the release version of the image, you
+can run the following instead:
 
     $ yum install eucalyptus-load-balancer-image
 
-You can read more about the differences between the development and released
-versions of the image below. Now that you've installed the package, you now
-need to load the image into Eucalyptus. You can do that with the following
-commands:
+### Installing into the Cloud
 
-    $ cd /usr/share/eucalyptus-load-balancer-image-devel
-    $ eustore-install-image -t eucalyptus-load-balancer-image-devel.tgz \
-        -a x86_64 -s loadbalancer -b loadbalancer
+You can read more about the differences between the development and
+released versions of the image below. Now that you've installed the
+package, you now need to load the image into Eucalyptus. You can do
+that with the following commands:
 
-Once you've loaded the image, you'll need to find the EMI of the image by
-describing installed images:
+    $ . /path/to/my/eucarc
+    $ euca-install-load-balancer --install-default
 
-    $ . ~/eucarc # source your euca creds
-    $ euca-describe-images | grep loadbalancer
+Your Load Balancer is not installed, configured and ready to go! If
+you're interesting in seeing which Load Balancer images you have
+installed on your system, you can run:
 
-Find the correct EMI number for the load balancer and use that to configure
-load balancer support using the configuration instructions below.
+    $ euca-install-load-balancer --list
+
+This command will list all bundles installed with their versions as
+well as showing you which machine image is enabled in Eucalyptus.
 
 Repository information
 ----------------------
@@ -91,21 +98,21 @@ The RPM packages built will be placed in the *results* subdirectory.
 Installation and configuration of the eustore tarball
 -----------------------------------------------------
 
-### Installing the image in your cloud
+### Installing the Load Balancer Image
 
-You'll need to use the *eustore* tools in order to install the image into your
-cloud. First, copy the eustore tarball that was created when you ran
-*build-eustore-tarball.sh* to your Eucalyptus Cloud Controller. Then run the
-following command:
+You'll need to use the *eustore* tools in order to install the image
+into your cloud. First, copy the eustore tarball that was created when
+you ran *build-eustore-tarball.sh* to your Eucalyptus Cloud Controller
+along with the Load Balancer installation script
+(euca-install-load-balancer). Then run the following command:
 
-    $ eustore-install-image -b <bucket_name> -a x86_64 -s loadbalancer -t eucalyptus-load-balancer-image.tgz
+    $ ./euca-install-load-balancer -t eucalyptus-load-balancer-image.tgz
 
-### Configuring support for loadbalancing
+### Manually Enabling the Load Balancer
 
-Now that the image is installed, you'll need to make sure that you configure
-properties for the load balancer. At a minimum you will need to configure the
-EMI of your load balancer, as well as the load balancer instance type.
+The command above will automatically enable the image you install. If
+for any reason you need to manually set the machine image ID or other
+Load Balancer parameters, you can use the commands below:
 
     $ euca-modify-property -p loadbalancing.loadbalancer_emi=emi-12345678
     $ euca-modify-property -p loadbalancing.loadbalancer_instance_type=m1.small
-
