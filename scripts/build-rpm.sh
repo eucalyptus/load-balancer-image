@@ -34,12 +34,14 @@ function insert_global()
 mkdir -p build/{BUILD,BUILDROOT,SRPMS,RPMS,SOURCES,SPECS}
 
 cp *.spec build/SPECS
-cp *.tgz *.ks scripts/build-eustore-tarball.sh IMAGE-LICENSE build/SOURCES
+cp *.tgz *.ks scripts/build-eustore-tarball.sh IMAGE-LICENSE \
+	euca-install-load-balancer build/SOURCES
 
 SPECFILE=$(echo -n build/SPECS/*.spec)
 
 insert_global $SPECFILE dist .el6
 insert_global $SPECFILE build_id $BUILD_ID
+insert_global $SPECFILE build_version $BUILD_VERSION
 
 #
 # Setting the devbuild macro will append '-devel' to the package name

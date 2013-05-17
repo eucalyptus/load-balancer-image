@@ -1,0 +1,328 @@
+#!/usr/bin/env python
+#
+# Software License Agreement (BSD License)
+#
+# Copyright (c) 2013, Eucalyptus Systems, Inc.
+# All rights reserved.
+#
+# Redistribution and use of this software in source and binary forms, with or
+# without modification, are permitted provided that the following conditions
+# are met:
+#
+#   Redistributions of source code must retain the above
+#   copyright notice, this list of conditions and the
+#   following disclaimer.
+#
+#   Redistributions in binary form must reproduce the above
+#   copyright notice, this list of conditions and the
+#   following disclaimer in the documentation and/or other
+#   materials provided with the distribution.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
+
+
+import argparse
+import copy
+import glob
+import logging
+import os
+import re
+import subprocess
+import sys
+import textwrap
+
+
+import euca2ools
+major_version = int(euca2ools.__version__.split('-')[0].split('.')[0])
+if major_version < 3:
+    print >> sys.stderr, "euca2ools version 3.0.0 or newer required."
+    sys.exit(1)
+
+
+from euca2ools.commands.bundle.deletebundle import DeleteBundle
+from euca2ools.commands.euca.deregisterimage import DeregisterImage
+from euca2ools.commands.euca.describeimages import DescribeImages
+from euca2ools.commands.eustore.installimage import InstallImage
+from euca2ools.exceptions import AWSError
+from requestbuilder.exceptions import ServiceInitError
+
+
+DEFAULT_IMAGE_LOCATION = '/usr/share/eucalyptus-load-balancer-image'
+
+
+class LBManager(object):
+    BUCKET_PREFIX = 'loadbalancer'
+    IMAGE_NAME = 'eustore-eucalyptus-load-balancer-image'
+
+    def __init__(self):
+        self._check_environment()
+        self._populate_images()
+
+    def _check_environment(self):
+        env = self._get_env()
+        cmd = ['euca-modify-property']
+        try:
+            with open(os.devnull, 'w') as nullfile:
+                subprocess.call(cmd, env=env, stdout=nullfile)
+        except OSError:
+            print >> sys.stderr, "Error: cannot find 'euca-modify-property' binary."
+            print >> sys.stderr, "Make sure EUCALYPTUS path variable is exported."
+            sys.exit(1)
+
+    def _populate_images(self):
+        self.images = {}
+        for image in DescribeImages().main().get('imagesSet', []):
+            name = image.get('name')
+            if name.startswith(self.IMAGE_NAME):
+                version = self._get_image_version(image)
+                if not version in self.images:
+                    self.images[version] = []
+                self.images[version].append(image)
+
+    def _get_image_version(self, image):
+        manifest = image.get('imageLocation')
+        matches = re.match(r'{0}_v(\d+)'.format(self.BUCKET_PREFIX), manifest)
+        try:
+            return int(matches.group(1))
+        except:
+            return 0
+
+    def _build_bucket_name(self):
+        return "{0}_v{1}".format(self.BUCKET_PREFIX,
+                                 self._get_next_version())
+
+    def _split_location(self, location):
+        matches = re.match(r'(.+)/(.+)\.manifest\.xml', location)
+        return matches.groups()
+
+    def _get_env(self):
+        path = "/usr/sbin"
+        if os.getenv('EUCALYPTUS'):
+            path = "{0}:{1}".format(os.path.join(os.getenv('EUCALYPTUS'),
+                                                 'usr/sbin'), path)
+        env = {
+            'PATH': path,
+            'AWS_ACCESS_KEY': os.getenv('AWS_ACCESS_KEY', ''),
+            'AWS_SECRET_KEY': os.getenv('AWS_SECRET_KEY', ''),
+            'EC2_ACCESS_KEY': os.getenv('EC2_ACCESS_KEY', ''),
+            'EC2_SECRET_KEY': os.getenv('EC2_SECRET_KEY', ''),
+            'AWS_CREDENTIAL_FILE': os.getenv('AWS_CREDENTIAL_FILE', ''),
+            'EUCALYPTUS_CERT': os.getenv('EUCALYPTUS_CERT', ''),
+            'EC2_ACCOUNT_NUMBER': os.getenv('EC2_ACCOUNT_NUMBER', ''),
+            'EC2_CERT': os.getenv('EC2_CERT', ''),
+            'EC2_URL': os.getenv('EC2_URL', ''),
+            'EUARE_URL': os.getenv('EUARE_URL', ''),
+            'S3_URL': os.getenv('S3_URL', ''),
+        }
+        return env
+
+    def _get_next_version(self):
+        if not self.images:
+            return 1
+        else:
+            return sorted(self.images)[-1] + 1
+
+    def _remove(self, images, force=False):
+        removed = []
+        enabled_image = self.get_enabled()
+        for image_set in images.itervalues():
+            should_remove = True
+            if not force:
+                for image in image_set:
+                    imageid = image.get('imageId')
+                    if imageid == enabled_image:
+                        print >> sys.stderr, "Warning: skipping enabled image."
+                        print >> sys.stderr, "Use '--force' to remove it anyway."
+                        should_remove = False
+
+            if should_remove:
+                for image in image_set:
+                    imageid = image.get('imageId')
+                    try:
+                        DeregisterImage(ImageId=imageid).main()
+                        DeregisterImage(ImageId=imageid).main()
+                    except AWSError:
+                        pass
+
+                    try:
+                        location = image.get('imageLocation')
+                        (bucket, prefix) = self._split_location(location)
+                        DeleteBundle(prefix=prefix, bucket=bucket, clear=True).main()
+                    except AWSError:
+                        pass
+                    removed.append(imageid)
+        return removed
+
+    def remove_all(self, force=False):
+        return self._remove(self.images, force=force)
+
+    def remove_old(self, force=False):
+        old_images = copy.deepcopy(self.images)
+        newest_key = sorted(old_images)[-1]
+        del old_images[newest_key]
+        return self._remove(old_images, force=force)
+
+    def list_images(self):
+        if not self.images:
+            print "No Load Balancers Installed."
+            print
+            return
+
+        enabled_image = self.get_enabled()
+        for version, images in self.images.iteritems():
+            lines = []
+            enabled_marker = False
+            for image in images:
+                if enabled_image == image.get('imageId'):
+                    enabled_marker = True
+                lines.append("{0} ({1})".format(image.get('imageId'),
+                                                image.get('imageLocation')))
+            if enabled_marker:
+                print "Version {0} (enabled)".format(version)
+            else:
+                print "Version {0}".format(version)
+            for line in lines:
+                print line
+            print
+
+    def install_and_enable(self, tarball):
+        image = lbm.install(tarball)
+        if image.get('machine') is None:
+            print >> sys.stderr, "Error: Load Balancer installation failed."
+            sys.exit(1)
+        lbm.enable(image.get('machine'))
+        print
+        print "Load Balancer Support is Enabled"
+
+    def install(self, tarball):
+        bucket = self._build_bucket_name()
+        return InstallImage(tarball=tarball, hypervisor='universal',
+                            architecture='x86_64', bucket=bucket,
+                            show_progress=True).main()
+
+    def get_enabled(self):
+        try:
+            env = self._get_env()
+            cmd = ['euca-describe-properties', 'loadbalancing.loadbalancer_emi']
+            out = subprocess.Popen(cmd, env=env,
+                                   stdout=subprocess.PIPE).communicate()[0]
+            imageid = out.split()[-1]
+            if imageid == "NULL":
+                return None
+            else:
+                return imageid
+        except OSError:
+            print >> sys.stderr, "Error: failed to get Load Balancer EMI."
+            sys.exit(1)
+
+    def enable(self, imageid):
+        try:
+            env = self._get_env()
+            cmd = ['euca-modify-property', '-p',
+                   'loadbalancing.loadbalancer_emi={0}'.format(imageid)]
+            subprocess.check_call(cmd, env=env)
+        except (OSError, subprocess.CalledProcessError):
+            print >> sys.stderr, "Error: failed to set Load Balancer EMI."
+            print >> sys.stderr, "You'll have to enable it manually."
+            print >> sys.stderr
+            print >> sys.stderr, "To enable load balancer support, run this command:"
+            print >> sys.stderr, " ".join(cmd)
+            sys.exit(1)
+
+    @classmethod
+    def create(cls):
+        #
+        # Quiet the attempts to get logger for Walrus
+        #
+        class NullHandler(logging.Handler):
+            def emit(self, record):
+                pass
+        logging.getLogger("Walrus").addHandler(NullHandler())
+
+        try:
+            return cls()
+        except ServiceInitError as err:
+            print >> sys.stderr, str(err)
+            sys.exit(1)
+        
+
+if __name__ == "__main__":
+    description = '''
+    Load Balancer Installation Tool:
+
+    This tool provides an easy way to install a Eucalyptus Load
+    Balancer image.  Normally, you'll want to pass '--default-tarball'
+    to install the latest Load Balancer image and register it with
+    Eucalyptus. You may also want to pass '--remove-old' if you want
+    to clean up older versions of the Load Balancer as well.
+
+    WARNING: DO NOT ATTEMPT TO REMOVE OLDER LOAD BALANCER IMAGES WHILE
+    INSTANCES ARE STILL RUNNING. FIRST TERMINATE ANY RUNNING LOAD
+    BALANCERS BEFORE ATTEMPTING THIS!'''
+
+    epilog = '''
+    NOTE: In order to use this you MUST have cloud administrator
+    credentials sourced in your environment (i.e., run the command
+    '. /my/cred/path/eucarc').'''
+
+    parser = argparse.ArgumentParser(formatter_class=argparse.RawDescriptionHelpFormatter,
+                                     description=description, epilog=epilog)
+    group = parser.add_mutually_exclusive_group(required=True)
+    group.add_argument('-t', '--tarball', metavar='TARBALL',
+                       help='Load Balancer tarball to install')
+    group.add_argument('--install-default', action='store_true',
+                       help='''This option must be supplied if you
+                       would like to install the default tarball''')
+    group.add_argument('-l', '--list', action='store_true',
+                       help='''List currently installed Load Balancer
+                       image bundles.''')
+    group.add_argument('--remove-old', action='store_true',
+                       help='''Remove OLD Load Balancers. Your most
+                       current Load Balancer installed will not be
+                       removed. Do not use this if you have OLD Load
+                       Balancer images running!''')
+    group.add_argument('--remove-all', action='store_true',
+                       help='''Remove ALL Load Balancers. Do not use
+                       this if you have ANY Load Balancer images
+                       running!''')
+    parser.add_argument('--force', action='store_true', help='''Force
+                        an operation. This will allow you to remove
+                        enabled Load Balancers.''')
+
+    args = parser.parse_args()
+    lbm = LBManager.create()
+
+    if args.tarball:
+        lbm.install_and_enable(args.tarball)
+    elif args.install_default:
+        print 'Installing default Load Balancer tarball.'
+        try:
+            tarball = glob.glob('{0}*/*.tgz'.format(DEFAULT_IMAGE_LOCATION))[0]
+            print 'Found tarball {0}'.format(tarball)
+            lbm.install_and_enable(tarball)
+        except IndexError:
+            print >> sys.stderr, "Error: failed to find a Load Balancer tarball."
+            print >> sys.stderr, "Try supplying one on the command line with '-t'."
+            sys.exit(1)
+    elif args.remove_old:
+        imageids = lbm.remove_old(force=args.force)
+        for imageid in imageids:
+            print "Removed {0}".format(imageid)
+    elif args.remove_all:
+        imageids = lbm.remove_all(force=args.force)
+        for imageid in imageids:
+            print "Removed {0}".format(imageid)
+    elif args.list:
+        print "Currently Installed Load Balancer Bundles:"
+        print
+        lbm.list_images()
