@@ -18,8 +18,10 @@
 # CA 93117, USA or visit http://www.eucalyptus.com/licenses/ if you need
 # additional information or have any questions.
 
+set -x
+
 if [ `id -u` -ne 0 ]; then
-    echo "-=[ERR]=- must run as root" >&2
+    echo "Error: must run as root" >&2
     exit 1
 fi
 
@@ -29,14 +31,15 @@ KSFILE=$1
 MIRRORTYPE=$2
 
 if [ -z $KSFILE ]; then
-    echo "-=[ERR]=- must to provide a kickstart file" >&2
+    echo "Error: must to provide a kickstart file" >&2
     exit 1
 fi
 
 [ -z $MIRRORTYPE ] && MIRRORTYPE=public
 
 KSGENFILE=${KSFILE%.in}
-PKGNAME=${KSGENFILE%.ks}
+BASENAME=${KSGENFILE%.ks}
+PKGNAME=$BASENAME-$BUILD_VERSION-$BUILD_ID
 
 #
 # Inject mirrors into the kickstart template
@@ -50,10 +53,8 @@ mkdir -p ./tmp
 
 ./ami-creator/ami_creator/ami_creator.py \
 	-c $KSGENFILE -t ./tmp \
-	-n $PKGNAME-$BUILD_VERSION-$BUILD_ID -v -e || exit 1
+	-n $PKGNAME -v -e || exit 1
 
-rm -rf $PKGNAME
 mkdir -p $PKGNAME
 mv *.img vmlinuz* $PKGNAME/
 tar -czvf $PKGNAME.tgz $PKGNAME
-

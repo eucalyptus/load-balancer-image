@@ -8,7 +8,7 @@ Group:          Applications/System
 License:        GPLv2
 URL:            http://www.eucalyptus.com/
 # Eustore image tarball
-Source0:        %{name}.tgz
+Source0:        %{name}-%{build_version}%{?build_id:-%build_id}.tgz
 # Image's OS's license
 Source1:        IMAGE-LICENSE
 # Kickstart used to build the image
