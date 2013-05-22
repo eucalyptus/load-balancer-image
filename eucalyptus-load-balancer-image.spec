@@ -24,24 +24,27 @@ balancer virtual machine.
 
 
 %prep
-cp -p %{SOURCE1} IMAGE-LICENSE
-cp -p %{SOURCE2} %{name}.ks
+cp -p %{SOURCE1} %{SOURCE2} %{_builddir}
 
 %build
 # No build required
 
 %install
-install -d -m 755 $RPM_BUILD_ROOT/usr/share/%{name}
-cp -p %{SOURCE0} $RPM_BUILD_ROOT/usr/share/%{name}
-install -d -m 755 $RPM_BUILD_ROOT/usr/bin
+install -m 755 -d $RPM_BUILD_ROOT%{_datarootdir}/%{name}
+install -m 644 %{SOURCE0} $RPM_BUILD_ROOT%{_datarootdir}/%{name}
+install -m 755 -d $RPM_BUILD_ROOT/usr/bin
 install -m 755 %{SOURCE3} $RPM_BUILD_ROOT/usr/bin
 
 %files
+%defattr(-,root,root,-)
 %doc IMAGE-LICENSE %{name}.ks
-/usr/share/%{name}
+%{_datarootdir}/%{name}
 /usr/bin/euca-install-load-balancer
 
 %changelog
+* Wed May 22 2013 Eucalyptus Release Engineering <support@eucalyptus.com> - 1.0-0
+- Cleaned up macro use
+
 * Thu May 16 2013 Eucalyptus Release Engineering <support@eucalyptus.com> - 1.0-0
 - Added load balancer easy install script
 
