@@ -34,6 +34,12 @@ services --enabled=network,ntpd,ntpdate,load-balancer-servo
 part / --size 524 --fstype ext3
 
 #
+# Explicity lock the root account
+# http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2013-2069
+#
+rootpw --lock
+
+#
 # Templated Repository Entries 
 {% for (name, urltype, url) in repos %}
 repo --name={{ name }} --{{ urltype }}={{ url }}
