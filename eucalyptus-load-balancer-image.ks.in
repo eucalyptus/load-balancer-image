@@ -129,3 +129,9 @@ sed -i '/!visiblepw/s/^/#/' /etc/sudoers
 echo "NOZEROCONF=yes" >> /etc/sysconfig/network
 %end
 
+#
+# Lock root login (just in case)
+%post --erroronfail
+passwd -l root
+%end
+
