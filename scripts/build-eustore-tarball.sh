@@ -35,7 +35,7 @@ if [ -z $KSFILE ]; then
     exit 1
 fi
 
-[ -z $MIRRORTYPE ] && MIRRORTYPE=public
+[ -z $MIRRORTYPE ] && MIRRORTYPE=public-nightly
 
 KSGENFILE=${KSFILE%.in}
 BASENAME=${KSGENFILE%.ks}

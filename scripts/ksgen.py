@@ -18,11 +18,13 @@
 # CA 93117, USA or visit http://www.eucalyptus.com/licenses/ if you need
 # additional information or have any questions.
 
-import sys
-import string
-import optparse
 from ConfigParser import ConfigParser as Config, NoOptionError
+import optparse
+import string
+import sys
+
 from jinja2 import Template
+
 
 class MirrorConfig(Config):
     def __init__(self, config_file):
@@ -60,7 +62,7 @@ if __name__ == "__main__":
     parser = optparse.OptionParser(usage=usage, version='%prog 0.1')
     parser.add_option('-c', '--config', default=None,
             help='template configuration options')
-    parser.add_option('-m', '--mirror-type', default='public',
+    parser.add_option('-m', '--mirror-type', default='public-nightly',
             help='choose configuration mirror type')
     (opts, args) = parser.parse_args()
     if len(args) < 1:
