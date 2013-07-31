@@ -31,7 +31,7 @@ firewall --disabled
 bootloader --timeout=1  --append xen_blkfront.sda_is_xvda=1
 network --bootproto=dhcp --device=eth0 --onboot=on
 services --enabled=network,ntpd,ntpdate,load-balancer-servo
-part / --size 524 --fstype ext3
+part / --size 682 --fstype ext3
 
 #
 # Templated Repository Entries 
