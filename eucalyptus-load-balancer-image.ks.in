@@ -127,11 +127,6 @@ echo "NOZEROCONF=yes" >> /etc/sysconfig/network
 %end
 
 #
-# Use CLC as NTP Server (EUCA-7305)
-sed -i '/^server/s/^/# /' /etc/ntp.conf
-echo "server 169.254.169.254" >> /etc/ntp.conf
-
-#
 # Lock root login (just in case)
 %post --erroronfail
 passwd -l root

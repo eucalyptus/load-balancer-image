@@ -192,11 +192,6 @@ echo "NOZEROCONF=yes" >> /etc/sysconfig/network
 %end
 
 #
-# Use CLC as NTP Server (EUCA-7305)
-sed -i '/^server/s/^/# /' /etc/ntp.conf
-echo "server 169.254.169.254" >> /etc/ntp.conf
-
-#
 # Add cloud-init script that will bootstrap the load-balancer-servo package for us
 %post --erroronfail
 mkdir -p /var/lib/cloud/scripts/per-boot
