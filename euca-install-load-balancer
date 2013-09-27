@@ -62,7 +62,8 @@ DEFAULT_IMAGE_LOCATION = '/usr/share/eucalyptus-load-balancer-image'
 
 class LBManager(object):
     BUCKET_PREFIX = 'loadbalancer'
-    IMAGE_NAME = 'eustore-eucalyptus-load-balancer-image'
+    # Account for new eustore image name format (EUCA-7660)
+    IMAGE_RE = re.compile('^eustore-([a-f0-9]+-|)eucalyptus-load-balancer-image')
 
     def __init__(self):
         self._check_environment()
@@ -83,7 +84,7 @@ class LBManager(object):
         self.images = {}
         for image in DescribeImages().main().get('imagesSet', []):
             name = image.get('name')
-            if name.startswith(self.IMAGE_NAME):
+            if self.IMAGE_RE.search(name):
                 version = self._get_image_version(image)
                 if not version in self.images:
                     self.images[version] = []
