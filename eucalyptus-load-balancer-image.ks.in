@@ -28,8 +28,8 @@ lang en_US.UTF-8
 keyboard us
 skipx
 timezone UTC
-auth --useshadow --enablemd5
-selinux --permissive
+auth --useshadow --passalgo=sha512
+selinux --disabled
 firewall --disabled
 bootloader --timeout=1  --append xen_blkfront.sda_is_xvda=1
 network --bootproto=dhcp --device=eth0 --onboot=on
@@ -48,25 +48,20 @@ repo --name={{ name }} --{{ urltype }}={{ url }}
 #
 %packages --nobase --excludedocs --instLangs=en
 @core
-acpid
 audit
 bash
 chkconfig
-cloud-init
 coreutils
 curl
 e2fsprogs
 grub
 kernel-xen
-openssh-clients
 openssh-server
 passwd
-pciutils
 policycoreutils
 rootfiles
 sudo
 system-config-firewall-base
-system-config-securitylevel-tui
 ntp
 ntpdate
 
@@ -79,6 +74,8 @@ python-httplib2
 
 #
 # Package exclusions
+-efibootmgr
+-acl
 -atmel-firmware
 -b43-openfwwf
 -cyrus-sasl
@@ -113,22 +110,69 @@ python-httplib2
 
 %end
 
+%post --erroronfail
 #
 # Fix sudo settings so that servo is able to start haproxy without a tty
-%post --erroronfail
 sed -i '/requiretty/s/^/#/' /etc/sudoers
 sed -i '/!visiblepw/s/^/#/' /etc/sudoers
-%end
 
 #
 # Disable zeroconf
-%post --erroronfail
 echo "NOZEROCONF=yes" >> /etc/sysconfig/network
-%end
 
 #
 # Lock root login (just in case)
-%post --erroronfail
 passwd -l root
+
+#
+# Update SSHD configuration
+sed -i 's/PasswordAuthentication yes/PasswordAuthentication no/' /etc/ssh/sshd_config
+
+cat >> /etc/ssh/sshd_config <<EOF
+UseDNS no
+PermitRootLogin without-password
+EOF
+
+cat >> /etc/rc.d/rc.local <<EOF
+
+#
+# Script content based on rc.local in starter emis
+# http://emis.eucalyptus.com
+#
+# Create the host keys for the SSH server
+for key_type in rsa dsa; do
+    if [ ! -f /etc/ssh/ssh_host_\${key_type}_key ]; then
+        ssh-keygen -t \${key_type} -N '' -f /etc/ssh/ssh_host_\${key_type}_key
+    fi
+done
+
+# simple attempt to get the user ssh key using the meta-data service
+if [ ! -d /root/.ssh ]; then
+    mkdir -p /root/.ssh
+    chmod 700 /root/.ssh
+elif [ ! -f /root/.ssh/authorized_keys ]; then
+    echo >> /root/.ssh/authorized_keys
+    chmod 600 authorized_keys
+    curl --retry 3 --retry-delay 10 -m 45 -s http://169.254.169.254/latest/meta-data/public-keys/0/openssh-key | grep 'ssh-rsa' >> /root/.ssh/authorized_keys
+    echo "AUTHORIZED_KEYS:"
+    echo "************************"
+    cat /root/.ssh/authorized_keys
+    echo "************************"
+fi
+
+# set the hostname to something sensible
+META_HOSTNAME="\$(curl -s http://169.254.169.254/latest/meta-data/local-hostname)"
+META_IP="\$(curl -s http://169.254.169.254/latest/meta-data/local-ipv4)"
+
+if [ \${META_HOSTNAME} = \${META_IP} ]; then
+        META_HOSTNAME="\$(echo \$META_HOSTNAME | sed -e 's/\./-/g' | xargs -I {} echo "ip-{}")"
+fi
+
+hostname \$META_HOSTNAME
+echo >> /etc/hosts
+echo "\${META_IP}   \${META_HOSTNAME}" >> /etc/hosts
+
+exit 0
+EOF
 %end
 
