@@ -16,7 +16,7 @@ Source2:        %{name}.ks
 # Installation script
 Source3:        euca-install-load-balancer
 
-Requires: euca2ools >= 3.0.0
+Requires: euca2ools >= 3.0.2
 
 %description
 This package contains a machine image for use in Eucalyptus as a load
@@ -42,6 +42,9 @@ install -m 755 %{SOURCE3} $RPM_BUILD_ROOT/usr/bin
 /usr/bin/euca-install-load-balancer
 
 %changelog
+* Tue Oct 01 2013 Eucalyptus Release Engineering <support@eucalyptus.com> - 1.0.2-0
+- Raise euca2ools requirement to version 3.0.2
+
 * Wed May 22 2013 Eucalyptus Release Engineering <support@eucalyptus.com> - 1.0-0
 - Cleaned up macro use
 
