@@ -139,6 +139,7 @@ cat >> /etc/rc.d/rc.local <<EOF
 # Script content based on rc.local in starter emis
 # http://emis.eucalyptus.com
 #
+
 # Create the host keys for the SSH server
 for key_type in rsa dsa; do
     if [ ! -f /etc/ssh/ssh_host_\${key_type}_key ]; then
@@ -146,19 +147,21 @@ for key_type in rsa dsa; do
     fi
 done
 
-# simple attempt to get the user ssh key using the meta-data service
 if [ ! -d /root/.ssh ]; then
     mkdir -p /root/.ssh
     chmod 700 /root/.ssh
-elif [ ! -f /root/.ssh/authorized_keys ]; then
-    echo >> /root/.ssh/authorized_keys
-    chmod 600 authorized_keys
-    curl --retry 3 --retry-delay 10 -m 45 -s http://169.254.169.254/latest/meta-data/public-keys/0/openssh-key | grep 'ssh-rsa' >> /root/.ssh/authorized_keys
-    echo "AUTHORIZED_KEYS:"
-    echo "************************"
-    cat /root/.ssh/authorized_keys
-    echo "************************"
 fi
+
+# Get public key for debugging load balancer (if set)
+# Setting this is available via the property:
+# loadbalancing.loadbalancer_vm_keyname
+echo >> /root/.ssh/authorized_keys
+chmod 600 authorized_keys
+curl --retry 3 --retry-delay 10 -m 45 -s http://169.254.169.254/latest/meta-data/public-keys/0/openssh-key | grep 'ssh-rsa' >> /root/.ssh/authorized_keys
+echo "AUTHORIZED_KEYS:"
+echo "************************"
+cat /root/.ssh/authorized_keys
+echo "************************"
 
 # set the hostname to something sensible
 META_HOSTNAME="\$(curl -s http://169.254.169.254/latest/meta-data/local-hostname)"
