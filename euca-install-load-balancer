@@ -43,9 +43,9 @@ import time
 
 
 import euca2ools
-major_version = int(euca2ools.__version__.split('-')[0].split('.')[0])
-if major_version < 3:
-    print >> sys.stderr, "euca2ools version 3.0.0 or newer required."
+(major, minor, patch) = euca2ools.__version__.split('-')[0].split('.')
+if int(major) < 3 or (int(major) >= 3 and int(patch) < 2):
+    print >> sys.stderr, "euca2ools version 3.0.2 or newer required."
     sys.exit(1)
 
 
@@ -213,7 +213,7 @@ class LBManager(object):
                             description=time.strftime(
                                 'Installed on %Y-%m-%d at %H:%M:%S %Z'),
                             architecture='x86_64', bucket=bucket,
-                            show_progress=True).main()
+                            show_progress=True, pad_name=True).main()
 
     def get_enabled(self):
         try:
