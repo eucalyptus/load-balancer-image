@@ -42,6 +42,9 @@ install -m 755 %{SOURCE3} $RPM_BUILD_ROOT/usr/bin
 /usr/bin/euca-install-load-balancer
 
 %changelog
+* Tue Dec 10 2013 Eucalyptus Release Engineering <support@eucalyptus.com> - 1.0.3-0
+- Use load-balancer-servo v1.0.2
+
 * Tue Oct 01 2013 Eucalyptus Release Engineering <support@eucalyptus.com> - 1.0.2-0
 - Raise euca2ools requirement to version 3.0.2
 
