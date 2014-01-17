@@ -68,7 +68,7 @@ ntpdate
 #
 # Loadbalancer packages
 haproxy # Version 1.5 required
-python-boto-2.8.0 # Version 2.8.0 required
+python-boto
 load-balancer-servo
 python-httplib2
 
