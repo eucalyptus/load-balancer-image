@@ -43,7 +43,10 @@ rootpw foobar
 
 #
 # Provide a little more room for development purposes
-part / --size 1024 --fstype ext3
+part / --size 1536 --fstype ext3
+zerombr
+rootpw --iscrypted $1$HEVobWzu$6d5IWr.r7Df15XHLFCggW/
+reboot
 
 #
 # Templated Repository Entries 
