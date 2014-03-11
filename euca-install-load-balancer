@@ -39,8 +39,6 @@ import os
 import re
 import subprocess
 import sys
-import time
-
 
 import euca2ools
 (major, minor, patch) = euca2ools.__version__.split('-')[0].split('.')
@@ -48,12 +46,7 @@ if int(major) < 3 or (int(major) >= 3 and int(patch) < 2):
     print >> sys.stderr, "euca2ools version 3.0.2 or newer required."
     sys.exit(1)
 
-
-from euca2ools.commands.bundle.deletebundle import DeleteBundle
-from euca2ools.commands.euca.deregisterimage import DeregisterImage
 from euca2ools.commands.euca.describeimages import DescribeImages
-from euca2ools.commands.eustore.installimage import InstallImage
-from euca2ools.exceptions import AWSError
 from requestbuilder.exceptions import ServiceInitError
 
 
@@ -62,8 +55,7 @@ DEFAULT_IMAGE_LOCATION = '/usr/share/eucalyptus-load-balancer-image'
 
 class LBManager(object):
     BUCKET_PREFIX = 'loadbalancer'
-    # Account for new eustore image name format (EUCA-7660)
-    IMAGE_RE = re.compile('^eustore-([a-f0-9]+-|)eucalyptus-load-balancer-image')
+    IMAGE_RE = re.compile('^eucalyptus-load-balancer-image')
 
     def __init__(self):
         self._check_environment()
@@ -107,25 +99,7 @@ class LBManager(object):
         return matches.groups()
 
     def _get_env(self):
-        path = "/usr/sbin"
-        if os.getenv('EUCALYPTUS'):
-            path = "{0}:{1}".format(os.path.join(os.getenv('EUCALYPTUS'),
-                                                 'usr/sbin'), path)
-        env = {
-            'PATH': path,
-            'AWS_ACCESS_KEY': os.getenv('AWS_ACCESS_KEY', ''),
-            'AWS_SECRET_KEY': os.getenv('AWS_SECRET_KEY', ''),
-            'EC2_ACCESS_KEY': os.getenv('EC2_ACCESS_KEY', ''),
-            'EC2_SECRET_KEY': os.getenv('EC2_SECRET_KEY', ''),
-            'AWS_CREDENTIAL_FILE': os.getenv('AWS_CREDENTIAL_FILE', ''),
-            'EUCALYPTUS_CERT': os.getenv('EUCALYPTUS_CERT', ''),
-            'EC2_ACCOUNT_NUMBER': os.getenv('EC2_ACCOUNT_NUMBER', ''),
-            'EC2_CERT': os.getenv('EC2_CERT', ''),
-            'EC2_URL': os.getenv('EC2_URL', ''),
-            'EUARE_URL': os.getenv('EUARE_URL', ''),
-            'S3_URL': os.getenv('S3_URL', ''),
-        }
-        return env
+        return os.environ.copy()
 
     def _get_next_version(self):
         if not self.images:
@@ -149,18 +123,16 @@ class LBManager(object):
             if should_remove:
                 for image in image_set:
                     imageid = image.get('imageId')
-                    try:
-                        DeregisterImage(ImageId=imageid).main()
-                        DeregisterImage(ImageId=imageid).main()
-                    except AWSError:
-                        pass
-
-                    try:
-                        location = image.get('imageLocation')
-                        (bucket, prefix) = self._split_location(location)
-                        DeleteBundle(prefix=prefix, bucket=bucket, clear=True).main()
-                    except AWSError:
-                        pass
+                    deregister_cmd = "euca-deregister {0}".format(imageid)
+                    deregister_output = subprocess.Popen(deregister_cmd, stdout=subprocess.PIPE,
+                                                            stderr=subprocess.PIPE, shell=True)
+                    deregister_output.wait()
+                    location = image.get('imageLocation')
+                    (bucket, prefix) = self._split_location(location)
+                    delete_bundle_cmd = "euca-delete-bundle -b {0}/{1}".format(bucket, prefix)
+                    delete_bundle_output = subprocess.Popen(delete_bundle_cmd, stdout=subprocess.PIPE,
+                                                            stderr=subprocess.PIPE, shell=True)
+                    delete_bundle_output.wait()
                     removed.append(imageid)
         return removed
 
@@ -175,7 +147,7 @@ class LBManager(object):
 
     def list_images(self):
         if not self.images:
-            print "No Load Balancers Installed."
+            print "No Imaging Workers Installed."
             print
             return
 
@@ -199,21 +171,62 @@ class LBManager(object):
             print
 
     def install_and_enable(self, tarball):
-        image = lbm.install(tarball)
-        if image.get('machine') is None:
-            print >> sys.stderr, "Error: Load Balancer installation failed."
+        image = self.install(tarball)
+        if image is None:
+            print >> sys.stderr, "Error: Imaging Worker installation failed."
             sys.exit(1)
-        lbm.enable(image.get('machine'))
+        self.enable(image)
         print
-        print "Load Balancer Support is Enabled"
+        print "Imaging Service Support is Enabled"
 
     def install(self, tarball):
+        ### Decompress image
+        decompress_cmd = "/bin/tar xzfv {0}".format(tarball)
+        print "Decompressing tarball: " + tarball
+        decompress_output = subprocess.Popen(decompress_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+        decompress_output.wait()
+        decompress_stdout = decompress_output.stdout.read()
+        decompress_stderr = decompress_output.stderr.read()
+        if decompress_output.returncode > 0:
+            print "Error: Imaging worker image unable to decompress.\n" \
+                                 + decompress_stdout + decompress_stderr
+            sys.exit(1)
+
+        ### Bundle and upload image
         bucket = self._build_bucket_name()
-        return InstallImage(tarball=tarball, hypervisor='universal',
-                            description=time.strftime(
-                                'Installed on %Y-%m-%d at %H:%M:%S %Z'),
-                            architecture='x86_64', bucket=bucket,
-                            show_progress=True, pad_name=True).main()
+        install_cmd = "euca-bundle-and-upload-image -b {0} -i {1} -r x86_64".format(bucket, decompress_stdout.strip())
+        print "Bundling and uploading image to bucket: " + bucket
+        bundle_output = subprocess.Popen(install_cmd, env=self._get_env(), stdout=subprocess.PIPE,
+                                         stderr=subprocess.PIPE, shell=True)
+        bundle_output.wait()
+        bundle_stdout = bundle_output.stdout.read()
+        bundle_stderr = bundle_output.stderr.read()
+        if bundle_output.returncode > 0:
+            print "Error: Imaging Worker unable to bundle and upload image.\n" + bundle_stdout + bundle_stderr
+            sys.exit(1)
+
+        try:
+            manifest = bundle_stdout.split()[1]
+        except IndexError:
+            print "Error: Imaging Worker unable to retrieve uploaded image manifest: " + manifest
+            sys.exit(1)
+
+        register_cmd = "euca-register {0} --name {1} " \
+                       "--virtualization-type hvm".format(manifest, "eucalyptus-load-balancer-image-v"
+                        + str(self._get_next_version()))
+        print "Registering image manifest: " + manifest
+        register_output = subprocess.Popen(register_cmd, env=self._get_env(), stdout=subprocess.PIPE,
+                                           stderr=subprocess.PIPE, shell=True)
+        register_output.wait()
+        register_stdout = register_output.stdout.read()
+        register_stderr = register_output.stderr.read()
+        if register_output.returncode > 0:
+            print "Error: Imaging Worker unable to register image.\n" \
+                                 + register_stdout + register_stderr
+            sys.exit(1)
+        emi_id = register_stdout.split()[1]
+        print "Registered image: " + emi_id
+        return emi_id
 
     def get_enabled(self):
         try:
@@ -240,7 +253,7 @@ class LBManager(object):
             print >> sys.stderr, "Error: failed to set Load Balancer EMI."
             print >> sys.stderr, "You'll have to enable it manually."
             print >> sys.stderr
-            print >> sys.stderr, "To enable load balancer support, run this command:"
+            print >> sys.stderr, "To enable load balancing service support, run this command:"
             print >> sys.stderr, " ".join(cmd)
             sys.exit(1)
 
