@@ -147,7 +147,7 @@ class LBManager(object):
 
     def list_images(self):
         if not self.images:
-            print "No Imaging Workers Installed."
+            print "No load balancer images Installed."
             print
             return
 
@@ -173,11 +173,11 @@ class LBManager(object):
     def install_and_enable(self, tarball):
         image = self.install(tarball)
         if image is None:
-            print >> sys.stderr, "Error: Imaging Worker installation failed."
+            print >> sys.stderr, "Error: Load balancer installation failed."
             sys.exit(1)
         self.enable(image)
         print
-        print "Imaging Service Support is Enabled"
+        print "Load Balancing Support is Enabled"
 
     def install(self, tarball):
         ### Decompress image
@@ -188,7 +188,7 @@ class LBManager(object):
         decompress_stdout = decompress_output.stdout.read()
         decompress_stderr = decompress_output.stderr.read()
         if decompress_output.returncode > 0:
-            print "Error: Imaging worker image unable to decompress.\n" \
+            print "Error: Unable to decompress load balancing image.\n" \
                                  + decompress_stdout + decompress_stderr
             sys.exit(1)
 
@@ -202,13 +202,13 @@ class LBManager(object):
         bundle_stdout = bundle_output.stdout.read()
         bundle_stderr = bundle_output.stderr.read()
         if bundle_output.returncode > 0:
-            print "Error: Imaging Worker unable to bundle and upload image.\n" + bundle_stdout + bundle_stderr
+            print "Error: Unable to bundle and upload load balancer image.\n" + bundle_stdout + bundle_stderr
             sys.exit(1)
 
         try:
             manifest = bundle_stdout.split()[1]
         except IndexError:
-            print "Error: Imaging Worker unable to retrieve uploaded image manifest: " + manifest
+            print "Error: Unable to retrieve uploaded image manifest: " + manifest
             sys.exit(1)
 
         register_cmd = "euca-register {0} --name {1} " \
@@ -221,7 +221,7 @@ class LBManager(object):
         register_stdout = register_output.stdout.read()
         register_stderr = register_output.stderr.read()
         if register_output.returncode > 0:
-            print "Error: Imaging Worker unable to register image.\n" \
+            print "Error: Unable to register load balancer image.\n" \
                                  + register_stdout + register_stderr
             sys.exit(1)
         emi_id = register_stdout.split()[1]
