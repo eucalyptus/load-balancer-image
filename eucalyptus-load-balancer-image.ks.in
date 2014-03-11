@@ -35,7 +35,9 @@ bootloader --timeout=1  --append xen_blkfront.sda_is_xvda=1
 network --bootproto=dhcp --device=eth0 --onboot=on
 services --enabled=network,ntpd,ntpdate,load-balancer-servo
 part / --size 682 --fstype ext3
-
+zerombr
+rootpw --iscrypted $1$HEVobWzu$6d5IWr.r7Df15XHLFCggW/
+reboot
 #
 # Templated Repository Entries 
 {% for (name, urltype, url) in repos %}
