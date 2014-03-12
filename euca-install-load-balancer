@@ -194,7 +194,8 @@ class LBManager(object):
 
         ### Bundle and upload image
         bucket = self._build_bucket_name()
-        install_cmd = "euca-bundle-and-upload-image -b {0} -i {1} -r x86_64".format(bucket, decompress_stdout.strip())
+        image_file = decompress_stdout.strip()
+        install_cmd = "euca-bundle-and-upload-image -b {0} -i {1} -r x86_64".format(bucket, image_file)
         print "Bundling and uploading image to bucket: " + bucket
         bundle_output = subprocess.Popen(install_cmd, env=self._get_env(), stdout=subprocess.PIPE,
                                          stderr=subprocess.PIPE, shell=True)
@@ -226,6 +227,16 @@ class LBManager(object):
             sys.exit(1)
         emi_id = register_stdout.split()[1]
         print "Registered image: " + emi_id
+
+        remove_tarball_cmd = "rm -f {0}".format(image_file)
+        remove_output = subprocess.Popen(remove_tarball_cmd, env=self._get_env(), stdout=subprocess.PIPE,
+                                         stderr=subprocess.PIPE, shell=True)
+        remove_output.wait()
+        remove_stdout = remove_output.stdout.read()
+        remove_stderr = remove_output.stderr.read()
+        if remove_output.returncode > 0:
+            print "Error: Unable delete {0}\n" + remove_stderr
+
         return emi_id
 
     def get_enabled(self):
