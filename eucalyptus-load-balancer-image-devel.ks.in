@@ -33,7 +33,7 @@ timezone UTC
 auth --useshadow --passalgo=sha512
 selinux --disabled
 firewall --disabled
-bootloader --timeout=1  --append xen_blkfront.sda_is_xvda=1
+bootloader --timeout=1  --append="xen_blkfront.sda_is_xvda=1 serial=tty0 console=ttyS0,115200n8"
 network --bootproto=dhcp --device=eth0 --onboot=on
 services --enabled=network,ntpd,ntpdate
 
@@ -97,6 +97,8 @@ vim-enhanced
 
 #
 # Package exclusions
+-plymouth
+-plymouth-system-theme
 -atmel-firmware
 -b43-openfwwf
 -cyrus-sasl
@@ -132,6 +134,20 @@ vim-enhanced
 %end
 
 %post --erroronfail
+#
+# Setup console
+cat > /etc/init/ttyS0.conf <<EOF
+stop on runlevel[016]
+start on runlevel[345]
+respawn
+instance /dev/ttyS0
+exec /sbin/mingetty /dev/ttyS0
+EOF
+
+sed -i 's/rhgb quiet//' /boot/grub/grub.conf
+sed -i 's/hiddenmenu//' /boot/grub/grub.conf
+sed -i 's/splashimage.*//' /boot/grub/grub.conf
+
 #
 # Fix sudo settings so that servo is able to start haproxy without a tty
 sed -i '/requiretty/s/^/#/' /etc/sudoers
