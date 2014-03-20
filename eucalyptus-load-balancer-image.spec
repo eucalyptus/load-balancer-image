@@ -16,7 +16,7 @@ Source2:        %{name}.ks
 # Installation script
 Source3:        euca-install-load-balancer
 
-Requires: euca2ools >= 3.0.2
+Requires: euca2ools >= 3.1.0
 
 %description
 This package contains a machine image for use in Eucalyptus as a load

@@ -42,8 +42,8 @@ import sys
 
 import euca2ools
 (major, minor, patch) = euca2ools.__version__.split('-')[0].split('.')
-if int(major) < 3 or (int(major) >= 3 and int(patch) < 2):
-    print >> sys.stderr, "euca2ools version 3.0.2 or newer required."
+if int(major) < 3 or (int(major) >= 3 and int(minor) < 1):
+    print >> sys.stderr, "euca2ools version 3.1.0 or newer required."
     sys.exit(1)
 
 from euca2ools.commands.euca.describeimages import DescribeImages
