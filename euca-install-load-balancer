@@ -80,7 +80,7 @@ class LBManager(object):
 
     def _get_image_version(self, image):
         manifest = image.location
-        matches = re.match(r'{0}-v(\d+)'.format(self.BUCKET_PREFIX), manifest)
+        matches = re.match(r'{0}.v(\d+)'.format(self.BUCKET_PREFIX), manifest)
         try:
             return int(matches.group(1))
         except:
