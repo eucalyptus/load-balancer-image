@@ -59,7 +59,7 @@ class LBManager(object):
 
     def _check_environment(self):
         env = self._get_env()
-        if not hasattr(env, "EC2_URL"):
+        if not "EC2_URL" in env:
             print >> sys.stderr, "Error: Unable to find EC2_URL"
             print >> sys.stderr, "Make sure your eucarc is sourced."
             sys.exit(1)
