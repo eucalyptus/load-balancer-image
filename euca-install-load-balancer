@@ -84,7 +84,8 @@ class LBManager(object):
 
     def _get_image_version(self, image):
         manifest = image.location
-        matches = re.match(r'{0}.v(\d+)'.format(self.BUCKET_PREFIX), manifest)
+        ### This looks for - or _ because 3.4.x used buckets named with _
+        matches = re.match(r'{0}[_|-]v(\d+)'.format(self.BUCKET_PREFIX), manifest)
         try:
             return int(matches.group(1))
         except:
