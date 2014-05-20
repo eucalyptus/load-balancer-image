@@ -51,7 +51,7 @@ DEFAULT_IMAGE_LOCATION = '/usr/share/eucalyptus-load-balancer-image'
 
 class LBManager(object):
     BUCKET_PREFIX = 'loadbalancer'
-    IMAGE_RE = re.compile('^eucalyptus-load-balancer-image')
+    IMAGE_RE = re.compile('eucalyptus-load-balancer-image')
 
     def __init__(self):
         self._check_environment()
@@ -75,8 +75,7 @@ class LBManager(object):
     def _populate_images(self):
         self.images = {}
         for image in boto.connect_ec2_endpoint(os.environ.get("EC2_URL")).get_all_images():
-            name = image.name
-            if self.IMAGE_RE.search(name):
+            if self.IMAGE_RE.search(image.location):
                 version = self._get_image_version(image)
                 if not version in self.images:
                     self.images[version] = []
