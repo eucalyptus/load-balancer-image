@@ -42,6 +42,8 @@ import sys
 import boto
 from requestbuilder.exceptions import ServiceInitError
 import euca2ools
+import time
+
 (major, minor, patch) = euca2ools.__version__.split('-')[0].split('.')
 if int(major) < 3 or (int(major) >= 3 and int(minor) < 1):
     print >> sys.stderr, "euca2ools version 3.1.0 or newer required."
@@ -207,9 +209,10 @@ class LBManager(object):
             print "Error: Unable to retrieve uploaded image manifest: " + manifest
             sys.exit(1)
 
-        register_cmd = "euca-register {0} --name {1} " \
+        register_cmd = "euca-register {0} --name {1} -d '{2}' " \
                        "--virtualization-type hvm".format(manifest, "eucalyptus-load-balancer-image-v"
-                        + str(self._get_next_version()))
+                        + str(self._get_next_version()), time.strftime(
+                                'Installed on %Y-%m-%d at %H:%M:%S %Z'))
         print "Registering image manifest: " + manifest
         register_stdout, register_stderr = self._run_command(register_cmd)
         emi_id = register_stdout.split()[1]
