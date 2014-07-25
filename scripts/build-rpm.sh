@@ -27,8 +27,6 @@ function insert_global()
     sed -i "1s/^/# This is a generated value\n%global $var $value\n\n/" $spec
 }
 
-. scripts/buildenv.sh
-
 [ -d ./build ] && rm -rf build
 
 mkdir -p build/{BUILD,BUILDROOT,SRPMS,RPMS,SOURCES,SPECS}
